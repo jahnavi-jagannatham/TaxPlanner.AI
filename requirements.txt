@@ -1,0 +1,8 @@
+streamlit==1.22.0
+langchain==0.0.184
+pypdf==3.8.1
+faiss-cpu==1.7.4
+python-dotenv==1.0.0
+cohere==4.3.1
+torch==2.0.1
+numpy==1.24.3
