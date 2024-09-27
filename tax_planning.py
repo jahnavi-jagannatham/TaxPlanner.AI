@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from langchain.docstore.document import Document
-from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.vectorstores import FAISS
 from langchain.embeddings import CohereEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -23,15 +23,23 @@ cohere_client = cohere.Client(COHERE_API_KEY)
 # Initialize Cohere client and embedding model
 cohere_embeddings = CohereEmbeddings(model="embed-english-v2.0", cohere_api_key=COHERE_API_KEY)
 
-# Define the prompt template for tax planning
-prompt_template = """You are a knowledgeable tax planning assistant. Use the following pieces of context to answer the tax-related question at the end. If you don't know the answer or if the information is not present in the context, just say that you don't have enough information to provide a definitive answer, and suggest consulting a tax professional for personalized advice.
+# Define the enhanced prompt template for tax planning
+enhanced_prompt_template = """You are a knowledgeable tax planning assistant. Use the following pieces of context to answer the tax-related question at the end. If you don't know the answer or if the information is not present in the context, just say that you don't have enough information to provide a definitive answer, and suggest consulting a tax professional for personalized advice.
 
+Context:
 {context}
 
 Question: {question}
-Answer:"""
-PROMPT = PromptTemplate(
-    template=prompt_template, input_variables=["context", "question"]
+
+Based on the question, provide the following:
+1. Answer to the question
+2. Suggestions for tax planning or financial strategies that might be beneficial
+
+Answer and Suggestions:"""
+
+ENHANCED_PROMPT = PromptTemplate(
+    template=enhanced_prompt_template,
+    input_variables=["context", "question"]
 )
 
 # Initialize the Cohere model for LLM
@@ -65,11 +73,27 @@ def load_excel_documents(uploaded_file):
         documents.append(document)
     return documents
 
+# Function to load and process financial knowledge base
+def load_financial_knowledge_base(file_path):
+    if os.path.isfile(file_path) and file_path.endswith('.pdf'):
+        # If it's a single PDF file
+        loader = PyPDFLoader(file_path)
+        documents = loader.load()
+    else:
+        raise ValueError(f"Invalid file path: {file_path}. It should be a PDF file.")
+    return documents
+
+# Load financial knowledge base
+financial_docs = load_financial_knowledge_base("C:\\Download\\unlearn\\Union Budget 2024.pdf")
+financial_vector_store = FAISS.from_documents(financial_docs, cohere_embeddings)
+
 # Function to create a VectorStore from documents
 def create_vector_store(documents):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = text_splitter.split_documents(documents)
-    vector = FAISS.from_documents(split_docs, cohere_embeddings)
+    # Combine user documents with financial knowledge base
+    all_docs = split_docs + financial_docs
+    vector = FAISS.from_documents(all_docs, cohere_embeddings)
     return vector
 
 # Function to create a RetrievalQA pipeline
@@ -78,12 +102,12 @@ def create_qa_pipeline(vector):
     qa_chain = RetrievalQA.from_chain_type(
         llm,
         retriever=retriever,
-        chain_type_kwargs={"prompt": PROMPT}
+        chain_type_kwargs={"prompt": ENHANCED_PROMPT}
     )
     return qa_chain
 
 # Streamlit UI
-st.set_page_config(page_title="TaxPlannerAI", page_icon="💼", layout="wide")
+st.set_page_config(page_title="TaxSavvy Stance", page_icon="💼", layout="wide")
 
 # Custom CSS to improve aesthetics
 st.markdown("""
@@ -102,8 +126,16 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Header
-st.title("💼 TaxPlannerAI")
+st.title("💼 TaxSavvy Stance")
 st.subheader("Your Intelligent Tax Planning Assistant")
+
+# Initialize conversation history in session state
+if 'conversation_history' not in st.session_state:
+    st.session_state.conversation_history = []
+
+# Function to add to conversation history
+def add_to_history(role, content):
+    st.session_state.conversation_history.append({"role": role, "content": content})
 
 # Sidebar for document upload
 with st.sidebar:
@@ -116,28 +148,35 @@ with st.sidebar:
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.header("🤖 Ask TaxPlannerAI")
+    st.header("🤖 TaxSavvy Stance")
+
+    # Display conversation history
+    for message in st.session_state.conversation_history:
+        if message["role"] == "user":
+            st.write("You: " + message["content"])
+        else:
+            st.write("TaxSavvy Stance: " + message["content"])
+
     query = st.text_input("Enter your tax-related question:")
     if st.button("Get Answer", key="query_button"):
         if 'vector_store' not in st.session_state or st.session_state.vector_store is None:
             st.warning("Please upload a document first.")
         elif query:
+            add_to_history("user", query)
             with st.spinner("Analyzing your question..."):
                 qa_pipeline = create_qa_pipeline(st.session_state.vector_store)
-                result = qa_pipeline({"query": query})
+
+                conversation_context = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.conversation_history[-5:]])
+
+                result = qa_pipeline({
+                    "conversation_history": conversation_context,
+                    "query": query
+                })
+
+                add_to_history("assistant", result["result"])
                 st.info(result["result"])
         else:
             st.warning("Please enter a question.")
-
-with col2:
-    st.header("💡 Tax Planning Tips")
-    st.markdown("""
-    - Keep track of all your income sources
-    - Understand deductible expenses
-    - Maximize your retirement contributions
-    - Consider tax-efficient investments
-    - Stay updated on tax law changes
-    """)
 
 # Document processing
 if uploaded_file is not None and 'vector_store' not in st.session_state:
@@ -151,4 +190,4 @@ if uploaded_file is not None and 'vector_store' not in st.session_state:
 
 # Footer
 st.markdown("---")
-st.markdown("*Disclaimer: TaxPlannerAI provides general tax information. For personalized advice, please consult a qualified tax professional.*")
+st.markdown("*Disclaimer: TaxSavvy Stance provides general tax information. For personalized advice, please consult a qualified tax professional.*")
