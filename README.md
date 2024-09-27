@@ -1,7 +1,7 @@
-# TaxPlanner.AI
-# TaxPlannerAI: Your Intelligent Tax Planning Assistant
+# TaxSavvy Stance
+# TaxSavvy Stance: Your Intelligent Tax Planning Assistant
 
-TaxPlannerAI is an advanced, AI-powered application designed to simplify tax planning and provide intelligent answers to tax-related questions. Built with Streamlit and leveraging the power of large language models, this tool offers an intuitive interface for users to upload tax documents and receive AI-generated insights.
+TaxSavvy Stance is an advanced, AI-powered application designed to simplify tax planning and provide intelligent answers to tax-related questions. Built with Streamlit and leveraging the power of large language models, this tool offers an intuitive interface for users to upload tax documents and receive AI-generated insights.
 
 
 ## 🌟 Features
@@ -16,7 +16,7 @@ TaxPlannerAI is an advanced, AI-powered application designed to simplify tax pla
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/taxplannerai.git
+   git clone https://github.com/yourusername/TaxSavvy Stance.git
    ```
 
 2. Install the required dependencies:
@@ -51,11 +51,11 @@ TaxPlannerAI is an advanced, AI-powered application designed to simplify tax pla
 
 ## ⚠️ Disclaimer
 
-TaxPlannerAI provides general tax information based on the documents you provide. For personalized advice, please consult a qualified tax professional. The application does not store or share your uploaded documents.
+TaxSavvy Stance provides general tax information based on the documents you provide. For personalized advice, please consult a qualified tax professional. The application does not store or share your uploaded documents.
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/yourusername/taxplannerai/issues).
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/yourusername/TaxSavvy Stance/issues).
 
 ## 📄 License
 
